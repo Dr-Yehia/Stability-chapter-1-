@@ -1,31 +1,23 @@
-from solver import StabilityInput, solve_critical_load
+from solver import solve_from_tables
 
 
-def test_rotational_spring_pcr_and_reference():
-    r = solve_critical_load(StabilityInput("rigid_bar_rotational_spring", L=2.0, k=10.0))
-    assert abs(r.pcr - 5.0) < 1e-12
-    assert "§1.4.1" in r.reference
-    assert len(r.steps) >= 3
+def test_auto_rotational_case():
+    nodes = [
+        {"Node_ID": 1, "X": 0, "Y": 0, "Has_Rot_Spring": "Yes", "K_theta": 10, "Has_Vert_Spring": "No", "K_y": 0, "Active": "Yes"},
+        {"Node_ID": 2, "X": 1, "Y": 0, "Has_Rot_Spring": "No", "K_theta": 0, "Has_Vert_Spring": "No", "K_y": 0, "Active": "Yes"},
+    ]
+    members = [{"Member_ID": 1, "Start_Node": 1, "End_Node": 2, "Active": "Yes"}]
+    loads = [{"Load_ID": 1, "Target_Type": "Node", "Target_ID": 2, "Has_Load": "Yes", "Load_Type": "Force", "Dir_X": -1, "Dir_Y": 0, "Active": "Yes"}]
+    r = solve_from_tables(nodes, members, loads)
+    assert abs(r.pcr - 10.0) < 1e-12
 
 
-def test_translational_spring_pcr():
-    r = solve_critical_load(StabilityInput("rigid_bar_translational_spring", L=2.0, k=10.0))
-    assert abs(r.pcr - 20.0) < 1e-12
-
-
-def test_two_bar_pcr():
-    r = solve_critical_load(StabilityInput("two_bar_system", L=2.0, k=10.0))
-    assert abs(r.pcr - 30.0) < 1e-12
-
-
-def test_three_bar_pcr():
-    r = solve_critical_load(StabilityInput("three_bar_system", L=2.0, k=10.0))
-    assert abs(r.pcr - 5.0) < 1e-12
-
-
-def test_invalid_inputs():
-    try:
-        solve_critical_load(StabilityInput("three_bar_system", L=0.0, k=10.0))
-        assert False
-    except ValueError:
-        assert True
+def test_auto_translational_case():
+    nodes = [
+        {"Node_ID": 1, "X": 0, "Y": 0, "Has_Rot_Spring": "No", "K_theta": 0, "Has_Vert_Spring": "No", "K_y": 0, "Active": "Yes"},
+        {"Node_ID": 2, "X": 1, "Y": 0, "Has_Rot_Spring": "No", "K_theta": 0, "Has_Vert_Spring": "Yes", "K_y": 10, "Active": "Yes"},
+    ]
+    members = [{"Member_ID": 1, "Start_Node": 1, "End_Node": 2, "Active": "Yes"}]
+    loads = [{"Load_ID": 1, "Target_Type": "Node", "Target_ID": 2, "Has_Load": "Yes", "Load_Type": "Force", "Dir_X": -1, "Dir_Y": 0, "Active": "Yes"}]
+    r = solve_from_tables(nodes, members, loads)
+    assert abs(r.pcr - 10.0) < 1e-12

@@ -1,7 +1,7 @@
 from solver import solve_from_tables
 
 
-def test_auto_rotational_case():
+def test_auto_rotational_case_energy_only():
     nodes = [
         {"Node_ID": 1, "X": 0, "Y": 0, "Has_Rot_Spring": "Yes", "K_theta": 10, "Has_Vert_Spring": "No", "K_y": 0, "Active": "Yes"},
         {"Node_ID": 2, "X": 1, "Y": 0, "Has_Rot_Spring": "No", "K_theta": 0, "Has_Vert_Spring": "No", "K_y": 0, "Active": "Yes"},
@@ -10,9 +10,11 @@ def test_auto_rotational_case():
     loads = [{"Load_ID": 1, "Target_Type": "Node", "Target_ID": 2, "Has_Load": "Yes", "Load_Type": "Force", "Dir_X": -1, "Dir_Y": 0, "Active": "Yes"}]
     r = solve_from_tables(nodes, members, loads)
     assert abs(r.pcr - 10.0) < 1e-12
+    assert r.method == "Energy approach only"
+    assert any("Π(θ)" in s.expression for s in r.steps)
 
 
-def test_auto_translational_case():
+def test_auto_translational_case_energy_only():
     nodes = [
         {"Node_ID": 1, "X": 0, "Y": 0, "Has_Rot_Spring": "No", "K_theta": 0, "Has_Vert_Spring": "No", "K_y": 0, "Active": "Yes"},
         {"Node_ID": 2, "X": 1, "Y": 0, "Has_Rot_Spring": "No", "K_theta": 0, "Has_Vert_Spring": "Yes", "K_y": 10, "Active": "Yes"},
@@ -21,3 +23,4 @@ def test_auto_translational_case():
     loads = [{"Load_ID": 1, "Target_Type": "Node", "Target_ID": 2, "Has_Load": "Yes", "Load_Type": "Force", "Dir_X": -1, "Dir_Y": 0, "Active": "Yes"}]
     r = solve_from_tables(nodes, members, loads)
     assert abs(r.pcr - 10.0) < 1e-12
+    assert r.method == "Energy approach only"

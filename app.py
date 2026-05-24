@@ -2,9 +2,9 @@ import pandas as pd
 import streamlit as st
 from solver import solve_from_tables
 
-st.set_page_config(page_title="Chapter 1 Auto Solver", layout="wide")
-st.title("Chapter 1 Auto Solver (No manual problem number)")
-st.caption("Enter nodes/members/loads. Solver detects the benchmark system automatically.")
+st.set_page_config(page_title="Chapter 1 Energy Solver", layout="wide")
+st.title("Chapter 1 Solver — Energy Approach Only")
+st.caption("No bifurcation method is used. All steps are from total potential energy Π = U + V.")
 
 st.markdown("### Nodes")
 default_nodes = pd.DataFrame([
@@ -25,13 +25,14 @@ default_loads = pd.DataFrame([
 ])
 loads_df = st.data_editor(default_loads, num_rows="dynamic", use_container_width=True)
 
-if st.button("Solve automatically"):
+if st.button("Solve automatically (Energy only)"):
     try:
         result = solve_from_tables(nodes_df.to_dict("records"), members_df.to_dict("records"), loads_df.to_dict("records"))
         st.success(f"Detected: {result.detected_system}")
+        st.success(f"Method: {result.method}")
         st.success(f"Critical load Pcr = {result.pcr:.10g}")
         st.write(f"Critical equation: `{result.critical_equation}`")
-        st.markdown("### Step-by-step")
+        st.markdown("### Step-by-step derivation")
         for i, s in enumerate(result.steps, 1):
             st.markdown(f"**Step {i}: {s.title}**")
             st.code(s.expression)

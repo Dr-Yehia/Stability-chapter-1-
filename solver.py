@@ -16,6 +16,7 @@ class SolveResult:
     pcr: float
     critical_equation: str
     steps: List[DerivationStep]
+    method: str
 
 
 def _find_node(nodes: list[dict], nid: int) -> dict:
@@ -26,10 +27,7 @@ def _find_node(nodes: list[dict], nid: int) -> dict:
 
 
 def solve_from_tables(nodes: list[dict], members: list[dict], loads: list[dict]) -> SolveResult:
-    """
-    Generic input solver for current Chapter-1 benchmark bar-spring systems.
-    No manual model selection required.
-    """
+    """Energy-approach-only solver for current Chapter-1 benchmark bar-spring systems."""
     active_members = [m for m in members if str(m.get("Active", "Yes")).lower() == "yes"]
     if len(active_members) != 1:
         raise ValueError("Current solver expects exactly one active member (single rigid bar benchmark).")
@@ -44,7 +42,6 @@ def solve_from_tables(nodes: list[dict], members: list[dict], loads: list[dict])
     if L <= 0:
         raise ValueError("Member length must be > 0")
 
-    # detect compressive load at end node in -x direction (global)
     end_loads = [
         ld for ld in loads
         if str(ld.get("Active", "Yes")).lower() == "yes"
@@ -66,26 +63,28 @@ def solve_from_tables(nodes: list[dict], members: list[dict], loads: list[dict])
     k_theta_2 = float(n2.get("K_theta", 0.0)) if str(n2.get("Has_Rot_Spring", "No")).lower() == "yes" else 0.0
     k_y_2 = float(n2.get("K_y", 0.0)) if str(n2.get("Has_Vert_Spring", "No")).lower() == "yes" else 0.0
 
-    # System A: rotational spring at node1 + axial load at node2 -> Pcr = kθ/L
     if k_theta_1 > 0 and k_theta_2 == 0 and k_y_2 == 0:
         pcr = k_theta_1 / L
         steps = [
-            DerivationStep("Geometry from nodes", f"L = sqrt((x2-x1)^2 + (y2-y1)^2) = {L:.10g}"),
-            DerivationStep("Detected system", "Rigid bar with rotational spring at node 1 and compressive end load at node 2"),
-            DerivationStep("Equilibrium (small deflection)", "kθ·θ - P·L·θ = 0", "Non-trivial: kθ - P·L = 0"),
-            DerivationStep("Critical load", f"Pcr = kθ/L = {k_theta_1:.10g}/{L:.10g} = {pcr:.10g}"),
+            DerivationStep("1) Geometry from coordinates", f"L = sqrt((x2-x1)^2 + (y2-y1)^2) = {L:.10g}"),
+            DerivationStep("2) Total potential energy", "Π(θ) = U + V = 1/2·kθ·θ^2 − P·L(1−cosθ)"),
+            DerivationStep("3) Equilibrium condition", "∂Π/∂θ = kθ·θ − P·L·sinθ = 0"),
+            DerivationStep("4) Small-deflection form (sinθ≈θ)", "(kθ − P·L)θ = 0"),
+            DerivationStep("5) Critical condition from non-trivial solution", "kθ − P·L = 0"),
+            DerivationStep("6) Critical load", f"Pcr = kθ/L = {k_theta_1:.10g}/{L:.10g} = {pcr:.10g}"),
         ]
-        return SolveResult("rigid_bar_rotational_spring_auto", pcr, "kθ - P·L = 0", steps)
+        return SolveResult("rigid_bar_rotational_spring_auto", pcr, "kθ − P·L = 0", steps, method="Energy approach only")
 
-    # System B: vertical spring at node2 + axial load at node2 -> Pcr = ky*L
     if k_theta_1 == 0 and k_theta_2 == 0 and k_y_2 > 0:
         pcr = k_y_2 * L
         steps = [
-            DerivationStep("Geometry from nodes", f"L = sqrt((x2-x1)^2 + (y2-y1)^2) = {L:.10g}"),
-            DerivationStep("Detected system", "Rigid bar with translational (vertical) spring at node 2 and compressive end load"),
-            DerivationStep("Equilibrium (small deflection)", "ky·L^2·θ - P·L·θ = 0", "Non-trivial: ky·L - P = 0"),
-            DerivationStep("Critical load", f"Pcr = ky·L = {k_y_2:.10g}×{L:.10g} = {pcr:.10g}"),
+            DerivationStep("1) Geometry from coordinates", f"L = sqrt((x2-x1)^2 + (y2-y1)^2) = {L:.10g}"),
+            DerivationStep("2) Kinematics", "Vertical spring extension δ = L·sinθ"),
+            DerivationStep("3) Total potential energy", "Π(θ) = U + V = 1/2·ky·(L·sinθ)^2 − P·L(1−cosθ)"),
+            DerivationStep("4) Equilibrium condition", "∂Π/∂θ = ky·L^2·sinθ·cosθ − P·L·sinθ = 0"),
+            DerivationStep("5) Small-deflection form", "(ky·L − P)·L·θ = 0"),
+            DerivationStep("6) Critical condition and load", f"Pcr = ky·L = {k_y_2:.10g}×{L:.10g} = {pcr:.10g}"),
         ]
-        return SolveResult("rigid_bar_translational_spring_auto", pcr, "ky·L - P = 0", steps)
+        return SolveResult("rigid_bar_translational_spring_auto", pcr, "ky·L − P = 0", steps, method="Energy approach only")
 
-    raise ValueError("Input pattern not recognized yet. Use 2-node/1-member bar with either node1 rotational spring OR node2 vertical spring.")
+    raise ValueError("Input pattern not recognized yet for ENERGY-only solver. Use 2-node/1-member bar with either node1 rotational spring OR node2 vertical spring.")

@@ -1,20 +1,23 @@
-# Chapter 1 Auto Solver
+# Chapter 1 Solver — ENERGY APPROACH ONLY
 
-This version solves from **input tables** (nodes/members/loads) without selecting "problem 1/2/3" manually.
+This solver intentionally uses **Energy Approach only** (`Π = U + V`) and does **not** use bifurcation formulation in the workflow/output.
 
-## Current auto-detected systems
+## What it does now
 
-- Single rigid bar, node-1 rotational spring, node-2 compressive load in -X: `Pcr = kθ/L`
-- Single rigid bar, node-2 vertical spring, node-2 compressive load in -X: `Pcr = ky*L`
+- Reads `Nodes`, `Members`, `Loads` tables.
+- Detects supported benchmark pattern automatically (no problem-number selection).
+- Produces **step-by-step energy derivation**:
+  1. geometry,
+  2. total potential energy,
+  3. equilibrium condition `∂Π/∂q = 0`,
+  4. small-deflection simplification,
+  5. critical condition,
+  6. `Pcr`.
 
-## Example requested by user
+## Currently supported auto-detected systems
 
-- Node 1 = (0,0)
-- Node 2 = (1,0)
-- Rotational spring at node 1
-- Force at node 2 in negative X
-
-The solver detects the system and returns `Pcr` with step-by-step derivation.
+1. Single rigid bar + rotational spring at node 1 + end compressive load in -X.
+2. Single rigid bar + vertical translational spring at node 2 + end compressive load in -X.
 
 ## Run
 

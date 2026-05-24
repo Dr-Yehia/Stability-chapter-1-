@@ -1,28 +1,31 @@
 # Chapter 1 Solver — ENERGY APPROACH ONLY
 
-This solver intentionally uses **Energy Approach only** (`Π = U + V`) and does **not** use bifurcation formulation in the workflow/output.
+This solver uses only the Energy Approach (`Pi = U + V`) and provides step-by-step derivation output.
 
-## What it does now
+## Supported workflows
 
-- Reads `Nodes`, `Members`, `Loads` tables.
-- Detects supported benchmark pattern automatically (no problem-number selection).
-- Produces **step-by-step energy derivation**:
-  1. geometry,
-  2. total potential energy,
-  3. equilibrium condition `∂Π/∂q = 0`,
-  4. small-deflection simplification,
-  5. critical condition,
-  6. `Pcr`.
+### 1) Example (2): three rigid bars A-B-C-D with two rotational springs
+- Geometry: three equal spans `L`.
+- Springs: equal rotational springs `k` at nodes B and C.
+- Loads: node A in `+X`, node D in `-X`.
+- Generalized coordinates: `theta_A`, `theta_D`.
+- Uses:
+  - `U = 1/2*k*(2*theta_A - theta_D)^2 + 1/2*k*(2*theta_D - theta_A)^2`
+  - `W = -P*L*(3 - cos(theta_A) - cos(theta_D - theta_A) - cos(theta_D))`
+  - `Pi = U + W`
+- Returns:
+  - `P = k/L, 3k/L`
+  - `Pcr = k/L`
+  - Stability condition from second variation ending in `P < k/L`.
 
-## Currently supported auto-detected systems
-
-1. Single rigid bar + rotational spring at node 1 + end compressive load in -X.
-2. Single rigid bar + vertical translational spring at node 2 + end compressive load in -X.
+### 2) Single-bar energy cases (kept for backward compatibility)
+- Rigid bar + rotational spring at node 1 + compressive end load in `-X`.
+- Rigid bar + vertical spring at node 2 + compressive end load in `-X`.
 
 ## Run
 
 ```bash
 python -m pip install -r requirements.txt
-streamlit run app.py
 python -m pytest -q
+streamlit run app.py
 ```
